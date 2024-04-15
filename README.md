@@ -1,1 +1,1 @@
-# Random_Objects_Mixed_Effects
+Code and Data used in the Manuscript ``Geodesic Mixed Effects Models for Repeatedly Observed/Longitudinal Random Objects'' by Bhattacharjee, S. and Mueller, H.G.
