@@ -1,10 +1,12 @@
-rm(list = ls())
+#rm(list = ls())
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 library(ggplot2)
 library(frechet)
-############# additional processing and fitting first step regression
+####Analysis of Human Mortality Data for univaraite probability distributions as random objects in the space of distributions endowed with the Wasserstein-2 metric
+####and generation of tables are figures used in Section S.4.2
+###Step 1###Additional processing and fitting first step regression
 #### Time consuming -- outputs saved as Rda files --  
-###skip running this part upto line 66
+###skip running this part go to line 73
 df = read.csv("../data/lt_subset.csv",header = TRUE) ###life tables for countries over the years from human mortality database (processed)
 Z = read.csv("../data/covariate_1990.csv",header = TRUE) ###baseline covariates from world bank data (processed)
 
@@ -30,7 +32,7 @@ obs = lapply(years, function(year){
     data_density(country,year) 
   })
 })
-save(obs, file = "../data/obs_dens_quant.Rda")
+save(obs, file = "../data/obs_dens_quant_2.Rda")
 
 ############
 ##function to fit the subject level (first step) Global Fr Regression to compute the random effects at the end points of the time domain
@@ -62,15 +64,16 @@ second_step_resp = lapply(1:n, function(ind){
   obj_fit_ind = subject_level_GFR$obj_fit
   mi_hat0 = obj_fit_ind[1,]
   mi_hat1 = obj_fit_ind[2,]
-  return(list(qin = qin, mi_hat0 = mi_hat0, mi_hat1 = mi_hat1, dSup_mean = dSup_mean))
+  return(list(qin = qin, mi_hat0 = mi_hat0, mi_hat1 = mi_hat1, 
+              dSup_mean = dSup_mean))
 })
-save(second_step_resp, file = "../data/second_step_resp.Rda")
+save(second_step_resp, file = "../data/second_step_resp_2.Rda")
 ###################
 ###################
 ## Load the necessary files from above
 load("../data/second_step_resp.Rda")
 df = read.csv("../data/lt_subset.csv",header = TRUE)
-Z = read.csv("../data/covariate_1991.csv",header = TRUE)
+Z = read.csv("../data/covariate_1990.csv",header = TRUE)
 
 countries = unique(df$Country)
 yearStart = 1990
@@ -101,7 +104,7 @@ Ti = (years -  years[1])/(years[length(years)] - years[1]) ##standarized time do
 ## Effects of the baseline covariates
 ############
 ######compare pred at the two end years
-##first pred - unemployment
+##first pred - unemployment -- Generating Figure S.5
 zout1 = as.matrix(cbind(sort(Z[,1]),
                         mean(Z[,2]),
                         mean(Z[,3]),
@@ -109,11 +112,13 @@ zout1 = as.matrix(cbind(sort(Z[,1]),
 ### Fitting the final estimate at varying values of unemployment rate, while all the other predictors are fixed at their mean levels
 second_step_gfr_fitz10 = frechet::GloDenReg(xin = Z, qin = second_step_resp0, 
                                             xout =  zout1,
-                                            optns = list(qSup = qSup, ndSup = 500))
+                                            optns = list(qSup = qSup, 
+                                                         ndSup = 500))
 
 second_step_gfr_fitz11 = frechet::GloDenReg(xin = Z, qin = second_step_resp1, 
                                             xout = zout1,
-                                            optns = list(qSup = qSup, ndSup = 500))
+                                            optns = list(qSup = qSup, 
+                                                         ndSup = 500))
 
 ### Generating Figure S.5
 df10 =  lapply(1:n, function(i){
@@ -136,7 +141,7 @@ pred1 = round(sort(Z[,1]),2)
 
 p1 = ggplot(data = df_pred1) + 
   geom_line(aes(x = domain, y = dens, col = gdp_rank, group = gdp_rank), 
-            size = .5) +
+            linewidth = .5) +
   theme_bw() +
   scale_color_gradient( low="blue", high="red", name = "Unemployment\n rate",
                         breaks = seq(min(pred1),max(pred1),length.out = 5), 
@@ -149,7 +154,7 @@ p1 = ggplot(data = df_pred1) +
         legend.position="bottom", legend.text = element_text(angle = 90)) +
   facet_wrap(~year)
 p1
-ggsave("../output/change_pred_unemployment_year01_final.pdf",
+ggsave("../output/change_pred_unemployment_year01_final2.pdf",
        width = 8, height = 7)
 
 ############
@@ -161,11 +166,13 @@ zout2 = as.matrix(cbind(mean(Z[,1]),
 ### Fitting the final estimate at varying values of fertility rate, while all the other predictors are fixed at their mean levels
 second_step_gfr_fitz20 = frechet::GloDenReg(xin = Z, qin = second_step_resp0, 
                                             xout =  zout2,
-                                            optns = list(qSup = qSup, ndSup = 500))
+                                            optns = list(qSup = qSup, 
+                                                         ndSup = 500))
 
 second_step_gfr_fitz21 = frechet::GloDenReg(xin = Z, qin = second_step_resp1, 
                                             xout = zout2,
-                                            optns = list(qSup = qSup, ndSup = 500))
+                                            optns = list(qSup = qSup,
+                                                         ndSup = 500))
 
 ### Generating Figure S.3
 df20 =  lapply(1:n, function(i){
@@ -187,7 +194,7 @@ df_pred2$pred = rep(rep("Fertility rate",each = 500),2)
 pred2 = round(sort(Z[,2]),2)
 p2 = ggplot(data = df_pred2) + 
   geom_line(aes(x = domain, y = dens, col = gdp_rank, group = gdp_rank), 
-            size = .5) +
+            linewidth = .5) +
   theme_bw() +
   scale_color_gradient( low="blue", high="red", name = "Fertility rate",
                         breaks = seq(min(pred2),max(pred2),length.out = 5), 
@@ -201,7 +208,7 @@ p2 = ggplot(data = df_pred2) +
         legend.position="bottom", legend.direction="horizontal") +
   facet_wrap(~year)
 p2
-ggsave("../output/change_pred_Fertility rate_year01_final.pdf",
+ggsave("../output/change_pred_Fertility rate_year01_final2.pdf",
        width = 8, height = 7)
 ######
 ##third pred - gdp per capita
@@ -212,11 +219,13 @@ zout3 = as.matrix(cbind(mean(Z[,1]),
 ### Fitting the final estimate at varying values of GDP per capita, while all the other predictors are fixed at their mean levels
 second_step_gfr_fitz30 = frechet::GloDenReg(xin = Z, qin = second_step_resp0, 
                                             xout =  zout3,
-                                            optns = list(qSup = qSup, ndSup = 500))
+                                            optns = list(qSup = qSup, 
+                                                         ndSup = 500))
 
 second_step_gfr_fitz31 = frechet::GloDenReg(xin = Z, qin = second_step_resp1, 
                                             xout = zout3,
-                                            optns = list(qSup = qSup, ndSup = 500))
+                                            optns = list(qSup = qSup,
+                                                         ndSup = 500))
 ### Generating Figure S.2
 df30 =  lapply(1:n, function(i){
   data.frame( domain = second_step_gfr_fitz30$dout[[i]]$x, 
@@ -237,7 +246,7 @@ df_pred3$pred = rep(rep("GDP per capita",each = 500),2)
 pred3 = round(sort(Z[,3]),2)
 p3 = ggplot(data = df_pred3) + 
   geom_line(aes(x = domain, y = dens, col = gdp_rank, group = gdp_rank), 
-            size = .5) +
+            linewidth = .5) +
   theme_bw() +
   scale_color_gradient( low="blue", high="red", name = "GDP\n per capita",
                         breaks = seq(min(pred3),max(pred3),length.out = 5), 
@@ -251,7 +260,7 @@ p3 = ggplot(data = df_pred3) +
         legend.position="bottom", legend.direction="horizontal") +
   facet_wrap(~year)
 p3
-ggsave("../output/change_pred_GDP_year01_final.pdf", width = 8, height = 7)
+ggsave("../output/change_pred_GDP_year01_final2.pdf", width = 8, height = 7)
 ###########
 ##fourth pred - pop growth
 zout4 = as.matrix(cbind(mean(Z[,1]),
@@ -261,11 +270,13 @@ zout4 = as.matrix(cbind(mean(Z[,1]),
 ### Fitting the final estimate at varying values of population growth, while all the other predictors are fixed at their mean levels
 second_step_gfr_fitz40 = frechet::GloDenReg(xin = Z, qin = second_step_resp0, 
                                             xout =  zout4,
-                                            optns = list(qSup = qSup, ndSup = 500))
+                                            optns = list(qSup = qSup, 
+                                                         ndSup = 500))
 
 second_step_gfr_fitz41 = frechet::GloDenReg(xin = Z, qin = second_step_resp1, 
                                             xout = zout4,
-                                            optns = list(qSup = qSup, ndSup = 500))
+                                            optns = list(qSup = qSup, 
+                                                         ndSup = 500))
 
 ### Generating Figure S.4
 df40 =  lapply(1:n, function(i){
@@ -287,7 +298,7 @@ df_pred4$pred = rep(rep("Population Growth",each = 500),2)
 pred4 = round(sort(Z[,4]),2)
 p4 = ggplot(data = df_pred4) + 
   geom_line(aes(x = domain, y = dens, col = gdp_rank, group = gdp_rank), 
-            size = .5) +
+            linewidth = .5) +
   theme_bw() +
   scale_color_gradient( low="blue", high="red", name = "Population growth %",
                         breaks = seq(min(pred4),max(pred4),length.out = 5), 
@@ -301,7 +312,7 @@ p4 = ggplot(data = df_pred4) +
         legend.text = element_text(angle = 90)) +
   facet_wrap(~year)
 p4
-ggsave("../output/change_pred_PopGrowth_year01_final.pdf", width = 8, height = 7)
+ggsave("../output/change_pred_PopGrowth_year01_final2.pdf", width = 8, height = 7)
 ####################################
 ############
 ## Final Estimates over different points of the time domain (on the geodesic) for varying values of the baseline covariates
@@ -321,22 +332,28 @@ zout4 = cbind(apply(Z[,1:3], 2, quantile,c(.50,.5,.50)),
 ###############################################
 ##varying levels of unemployment rate over the years -- computing final estimates
 second_step_gfr_fitz10 = frechet::GloDenReg(xin = Z, qin = second_step_resp0, 
-                                            xout =  zout3, optns = list(qSup = qSup))
+                                            xout =  zout3, 
+                                            optns = list(qSup = qSup))
 second_step_gfr_fitz11 = frechet::GloDenReg(xin = Z, qin = second_step_resp1, 
-                                            xout =  zout3, optns = list(qSup = qSup))
+                                            xout =  zout3, 
+                                            optns = list(qSup = qSup))
 
 ##evaluated at different points on the time domain 
 
 ###quantile representation of the final outputs
 output_q_z1 =  lapply(1:nrow(zout1), function(ind){
   out = t(sapply(1:ni, function(j){
-    q_geo(Ti[j], second_step_gfr_fitz10$qout[ind,], second_step_gfr_fitz11$qout[ind,])
+    q_geo(Ti[j], second_step_gfr_fitz10$qout[ind,], 
+          second_step_gfr_fitz11$qout[ind,])
   }))
 })
 ###density representation of the final outputs
 output_d_z1 = lapply(1:nrow(zout1), function(ind){
   lapply(1:ni, function(j){
-    frechet:::qf2pdf(output_q_z1[[ind]][j,], optns = list(qSup = qSup, outputGrid = dSup_mean,nRegGrid =500))
+    frechet:::qf2pdf(output_q_z1[[ind]][j,],
+                     optns = list(qSup = qSup, 
+                                  outputGrid = second_step_resp[[1]]$dSup_mean,
+                                  nRegGrid =500))
   })
 }) 
 years_select = c(2015,2005,1995)
@@ -359,8 +376,9 @@ dens_display_z1$pred = c(rep("At 10% quantile",500*length(years_select)),
 cols = c("red", "blue","green4")
 yr.labs <- c("year == 2015", "year == 2005", "year == 1995")
 names(yr.labs) <- c("1995", "2005", "2015")
+library("forcats")
 p1 = ggplot(data = dens_display_z1) +
-  geom_line(aes(x = domain, y = dens, col= pred, group = pred), size = .5) +
+  geom_line(aes(x = domain, y = dens, col= pred, group = pred), linewidth = .5) +
   theme_bw() +
   scale_colour_manual(values = cols, name="Unemployment rate") +
   labs(x  = "Age", 
@@ -372,27 +390,33 @@ p1 = ggplot(data = dens_display_z1) +
         legend.position = "bottom") +
   facet_grid(~fct_rev(year), labeller = as_labeller(yr.labs, default = label_parsed))
 p1
-ggsave("../output/change_pred_unemployment_select_years_over_years_final.pdf",
+ggsave("../output/change_pred_unemployment_select_years_over_years_final2.pdf",
        width = 8, height = 7)
 ############################################
 ##varying levels of fertility rate over the years -- computing final estimates
 second_step_gfr_fitz20 = frechet::GloDenReg(xin = Z, qin = second_step_resp0, 
-                                            xout =  zout2, optns = list(qSup = qSup))
+                                            xout =  zout2, 
+                                            optns = list(qSup = qSup))
 second_step_gfr_fitz21 = frechet::GloDenReg(xin = Z, qin = second_step_resp1, 
-                                            xout =  zout2, optns = list(qSup = qSup))
+                                            xout =  zout2, 
+                                            optns = list(qSup = qSup))
 
 ##evaluated at different points on the time domain 
 
 ###quantile representation of the final outputs
 output_q_z2 =  lapply(1:nrow(zout2), function(ind){
   out = t(sapply(1:ni, function(j){
-    q_geo(Ti[j], second_step_gfr_fitz20$qout[ind,], second_step_gfr_fitz21$qout[ind,])
+    q_geo(Ti[j], second_step_gfr_fitz20$qout[ind,],
+          second_step_gfr_fitz21$qout[ind,])
   }))
 })
 ###density representation of the final outputs
 output_d_z2 = lapply(1:nrow(zout2), function(ind){
   lapply(1:ni, function(j){
-    frechet:::qf2pdf(output_q_z2[[ind]][j,], optns = list(qSup = qSup, outputGrid = dSup_mean,nRegGrid =500))
+    frechet:::qf2pdf(output_q_z2[[ind]][j,], 
+                     optns = list(qSup = qSup, 
+                                  outputGrid = second_step_resp[[1]]$dSup_mean,
+                                  nRegGrid =500))
   })
 }) 
 ######
@@ -410,7 +434,7 @@ dens_display_z2$pred = c(rep("At 10% quantile",500*length(years_select)),
 
 
 p2 = ggplot(data = dens_display_z2) +
-  geom_line(aes(x = domain, y = dens, col= pred, group = pred), size = .5) +
+  geom_line(aes(x = domain, y = dens, col= pred, group = pred), linewidth = .5) +
   theme_bw() +
   scale_colour_manual(values = cols, name="Fertility rate") +
   labs(x  = "Age", 
@@ -422,26 +446,32 @@ p2 = ggplot(data = dens_display_z2) +
         strip.text.y = element_blank()) +
   facet_grid(~fct_rev(year), labeller = as_labeller(yr.labs, default = label_parsed))
 p2
-ggsave("../output/change_pred_fertility_select_years_over_years_final.pdf",
+ggsave("../output/change_pred_fertility_select_years_over_years_final2.pdf",
        width = 8, height = 7)
 ############################################
 ##varying levels of GDP per capita over the years -- computing final estimates
 second_step_gfr_fitz30 = frechet::GloDenReg(xin = Z, qin = second_step_resp0, 
-                                            xout =  zout3, optns = list(qSup = qSup))
+                                            xout =  zout3,
+                                            optns = list(qSup = qSup))
 second_step_gfr_fitz31 = frechet::GloDenReg(xin = Z, qin = second_step_resp1, 
-                                            xout =  zout3, optns = list(qSup = qSup))
+                                            xout =  zout3, 
+                                            optns = list(qSup = qSup))
 ##evaluated at different points on the time domain 
 
 ###quantile representation of the final outputs
 output_q_z3 =  lapply(1:nrow(zout3), function(ind){
   out = t(sapply(1:ni, function(j){
-    q_geo(Ti[j], second_step_gfr_fitz30$qout[ind,], second_step_gfr_fitz31$qout[ind,])
+    q_geo(Ti[j], second_step_gfr_fitz30$qout[ind,], 
+          second_step_gfr_fitz31$qout[ind,])
   }))
 })
 ###density representation of the final outputs
 output_d_z3 = lapply(1:nrow(zout3), function(ind){
   lapply(1:ni, function(j){
-    frechet:::qf2pdf(output_q_z3[[ind]][j,], optns = list(qSup = qSup, outputGrid = dSup_mean,nRegGrid =500))
+    frechet:::qf2pdf(output_q_z3[[ind]][j,],
+                     optns = list(qSup = qSup,
+                                  outputGrid = second_step_resp[[1]]$dSup_mean,
+                                  nRegGrid =500))
   })
 }) 
 
@@ -460,7 +490,7 @@ dens_display_z3$pred = c(rep("At 10% quantile",500*length(years_select)),
 
 
 p3 = ggplot(data = dens_display_z3) +
-  geom_line(aes(x = domain, y = dens, col= pred, group = pred), size = .5) +
+  geom_line(aes(x = domain, y = dens, col= pred, group = pred), linewidth = .5) +
   theme_bw() +
   scale_colour_manual(values = cols, name="GDP per capita") +
   labs(x  = "Age", 
@@ -472,28 +502,34 @@ p3 = ggplot(data = dens_display_z3) +
         strip.text.y = element_blank()) +
   facet_grid(~fct_rev(year), labeller = as_labeller(yr.labs, default = label_parsed))
 p3
-ggsave("../output/change_pred_GDP_select_years_over_years_final.pdf",
+ggsave("../output/change_pred_GDP_select_years_over_years_final2.pdf",
        width = 8, height = 7)
 ########################################
 ##varying levels of population growth over the years -- computing final estimates
 
 second_step_gfr_fitz40 = frechet::GloDenReg(xin = Z, qin = second_step_resp0, 
-                                            xout =  zout4, optns = list(qSup = qSup))
+                                            xout =  zout4,
+                                            optns = list(qSup = qSup))
 second_step_gfr_fitz41 = frechet::GloDenReg(xin = Z, qin = second_step_resp1, 
-                                            xout =  zout4, optns = list(qSup = qSup))
+                                            xout =  zout4,
+                                            optns = list(qSup = qSup))
 ##evaluated at different points on the time domain 
 
 ###quantile representation of the final outputs
 output_q_z4 =  lapply(1:nrow(zout4), function(ind){
   out = t(sapply(1:ni, function(j){
-    q_geo(Ti[j], second_step_gfr_fitz40$qout[ind,], second_step_gfr_fitz41$qout[ind,])
+    q_geo(Ti[j], second_step_gfr_fitz40$qout[ind,], 
+          second_step_gfr_fitz41$qout[ind,])
   }))
 })
 
 ###density representation of the final outputs
 output_d_z4 = lapply(1:nrow(zout4), function(ind){
   lapply(1:ni, function(j){
-    frechet:::qf2pdf(output_q_z4[[ind]][j,], optns = list(qSup = qSup, outputGrid = dSup_mean,nRegGrid =500))
+    frechet:::qf2pdf(output_q_z4[[ind]][j,], 
+                     optns = list(qSup = qSup,
+                                  outputGrid = second_step_resp[[1]]$dSup_mean,
+                                  nRegGrid =500))
   })
 }) 
 
@@ -512,7 +548,7 @@ dens_display_z4$pred = c(rep("At 10% quantile",500*length(years_select)),
 
 
 p4 = ggplot(data = dens_display_z4) +
-  geom_line(aes(x = domain, y = dens, col= pred, group = pred), size = .5) +
+  geom_line(aes(x = domain, y = dens, col= pred, group = pred), linewidth = .5) +
   theme_bw() +
   scale_colour_manual(values = cols, name="Population growth %") +
   labs(x  = "Age", 
@@ -524,7 +560,7 @@ p4 = ggplot(data = dens_display_z4) +
         legend.position = "bottom") +
   facet_grid(~fct_rev(year), labeller = as_labeller(yr.labs, default = label_parsed))
 p4
-ggsave("../output/change_pred_PopGrowth_select_years_over_years_final.pdf",
+ggsave("../output/change_pred_PopGrowth_select_years_over_years_final2.pdf",
        width = 8, height = 7)
 ######################
 ############
@@ -532,9 +568,13 @@ ggsave("../output/change_pred_PopGrowth_select_years_over_years_final.pdf",
 ############
 ### computing final estimates at all observed covariate values
 second_step_gfr_fit0 = frechet::GloDenReg(xin = Z, qin = second_step_resp0, 
-                                          xout = zout, optns = list(qSup = qSup, dSup = dSup_mean))$qout
+                                          xout = Z, 
+                                          optns = list(qSup = qSup, 
+                                                       dSup = second_step_resp[[1]]$dSup_mean))$qout
 second_step_gfr_fit1 = frechet::GloDenReg(xin = Z, qin = second_step_resp1, 
-                                          xout = zout, optns = list(qSup = qSup, dSup = dSup_mean))$qout
+                                          xout = Z, 
+                                          optns = list(qSup = qSup, 
+                                                       dSup = second_step_resp[[1]]$dSup_mean))$qout
 
 ### Generating Figure S.10
 contr_select = c("AUS", "FRA","FIN","JPN","NLD", "USA")
@@ -542,7 +582,7 @@ contr_select_ind = which(countries %in% contr_select)
 years_select = c(1995, 2000, 2008)
 years_select_ind = which(years %in% years_select)
 ####### loading the observed data -- quantiles and densities
-load("../data/obs_dens_quant.Rda")
+load("../data/obs_dens_quant_2.Rda")
 df_obs = do.call(rbind,lapply(contr_select_ind, function(ind){
   do.call(rbind,lapply(years_select_ind, function(j){
     data.frame(domain = obs[[j]][[ind]]$dens$x,
@@ -565,7 +605,10 @@ outputs =  lapply(1:n, function(ind){
 })
 dout_overall = lapply(contr_select_ind, function(ind){
   lapply(1:ni, function(j){
-    frechet:::qf2pdf(outputs[[ind]][j,], optns = list(qSup = qSup, outputGrid = dSup_mean,nRegGrid =500))
+    frechet:::qf2pdf(outputs[[ind]][j,],
+                     optns = list(qSup = qSup,
+                                  outputGrid = second_step_resp[[1]]$dSup_mean,
+                                  nRegGrid =500))
   })
 }) 
 
@@ -601,10 +644,11 @@ p = ggplot() +
         legend.position = "bottom") +
   facet_wrap(~pred, labeller = labeller(pred = pred.labs))
 p
-ggsave("../output/obs_vs_pred_select_years_select_countries_final.pdf",
+ggsave("../output/obs_vs_pred_select_years_select_countries_final2.pdf",
        width = 8, height = 7)
 ############
 ## Prediction Error
+#### Time consuming -- outputs saved as 716
 ############
 library(parallel)
 B = 200
@@ -625,7 +669,8 @@ rslt = mclapply(1:B, function(rep){
     obj_fit_ind = subject_level_GFR$obj_fit
     mi_hat0 = obj_fit_ind[1,]
     mi_hat1 = obj_fit_ind[2,]
-    return(list(qin = qin, mi_hat0 = mi_hat0, mi_hat1 = mi_hat1, dSup_mean = dSup_mean))
+    return(list(qin = qin, mi_hat0 = mi_hat0, mi_hat1 = mi_hat1,
+                dSup_mean = dSup_mean))
   })
   second_step_resp0 = t(sapply(1:(n/2), function(ind){ ###first step estimate of random effects at time 0 -- quantile representation
     second_step_resp[[ind]]$mi_hat0

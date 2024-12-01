@@ -1,4 +1,4 @@
-rm(list = ls())
+#rm(list = ls())
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 library(frechet)
 library(parallel)
@@ -11,7 +11,7 @@ source("./SpheGeoHess.R")
 source("./l2norm.R")
 source("./GloSpheGeoReg.R")
 
-## Geodesic on the surface of a sphere
+##Data Generation::  Geodesic on the surface of a sphere
 generate_pts_on_geod = function(t,A,B){
   omega = as.numeric(acos(A %*% B))
   d = sin(omega)
@@ -19,7 +19,7 @@ generate_pts_on_geod = function(t,A,B){
   s1 = sin(t*omega)
   return((A*s0 + B*s1)/d)
 }
-## subject level geodesic : generate observed data and recovered by global Fr regression
+##Data Generation::  subject level geodesic : generate observed data and recovered by global Fr regression
 subject_level_GFR = function(ind, Z, alpha){
   ni = 30#sample(5,1,replace = TRUE)
   Ti = runif(ni)

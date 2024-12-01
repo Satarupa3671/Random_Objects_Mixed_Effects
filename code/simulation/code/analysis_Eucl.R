@@ -1,4 +1,4 @@
-rm(list = ls())
+#rm(list = ls())
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 library(lme4)
 library(HLMdiag)
@@ -100,11 +100,4 @@ p1 = ggplot() +
         legend.position = "bottom") 
 p1
 ggsave("../output/compare_Eucl_estd.pdf", width = 8, height = 7)
-# plot(fat$id, est,type="p",axes=F,ylim=c(-50,100),pch=20,col="blue",xlab="",ylab="")
-# par(new=T)
-# plot(fat$id, est2,type="p",pch=20,axes=F,ylim=c(-50,100),col="darkgreen",xlab="",ylab="")
-# par(new=T)
-# plot(unique(fat$id), re[,2],type="p",pch=20,ylim=c(-50,100),col="red",xlab="Subject ID",ylab="Mean",main="Estimated % Body Fat")
-# par(new=F)
-# legend('topleft',bty='n',c("lme4","Proposed","Random Effect"),cex=1,pch=c(20,20,20),col=c("blue","green","red"))
-# 
+

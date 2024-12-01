@@ -1,3 +1,23 @@
+### Global Fréchet Regression for Spherical Data with respect to the geodesic distance.
+### Input: xin An \eqn{n}-by-\eqn{p} matrix with input measurement points.
+###        yin An \eqn{n}-by-\eqn{m} matrix holding the spherical data, of which the sum of squares of elements within each row is 1.
+###        xout A vector of length \eqn{p} with output measurement points;
+### Output: A vector of length \eqn{m} holding the fitted responsee, which is a spherical vector, corresponding to each element in \code{xout}.
+### Example:
+###   n <- 101
+###   xin <- seq(-1,1,length.out = n)
+###   xin = as.matrix(xin, ncol = 1)
+###   theta_true <- rep(pi/2,n)
+###   phi_true <- (xin + 1) * pi / 4
+###   ytrue <- apply( cbind( 1, phi_true, theta_true ), 1, pol2car )
+###   yin <- t( ytrue )
+###   xout <- mean(xin)
+###   res <- GloSpheGeoReg(xin=xin, yin=yin, xout=xout)
+###   references: \cite{Petersen, A., & Müller, H.-G. (2019). "Fréchet regression for random objects with Euclidean predictors." The Annals of Statistics, 47(2), 691--719.}
+
+### Important: using trust package and perturbation for initial value
+
+
 GloSpheGeoReg <- function(xin, yin, xout) {
   k = length(xout)
   n = nrow(xin)

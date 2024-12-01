@@ -1,4 +1,4 @@
-rm(list = ls())
+#rm(list = ls())
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 library(igraph)
 library(ggplot2)
@@ -7,10 +7,11 @@ library(dplyr)
 library(qgraph)
 library(corrplot)
 library(frechet)
-
-############# additional processing and fitting first step regression
+####Analysis of ADNI data for correlation networks as random objects in the space of SPD matrices endowed with the power alpha = 1/2 metric
+####and generation of tables are figures used in Section 5
+###Step 1###Additional processing to align all observations in time domiaj  [0,1], and fitting first step regression
 #### Time consuming -- outputs saved as Rda files -- 
-##skip running this part upto line 66
+##skip running this part upto line 69
 load("../data/resp_final_06262022_AAL_CN.Rda") ### data on SPD matrices for CN subjects, preprocessed using AAL percellation from the ADNI fMRI database and converted into correlation matrices
 load("../data/covariate_final_06262022_AAL_CN.Rda") ### covariate information including time of scan for the same subjects
 
@@ -47,7 +48,8 @@ subject_level_GFR = function(ind){
   Min = resp2[[ind]]
   Tin = as.matrix(mydata_new[[ind]]$dates_effect)
   obj_fit = frechet::GloCovReg(x = Tin, M = Min, xout = as.matrix(c(0,1)),
-                               optns = list(corrOut = TRUE, metric = "power", alpha = .5 ))$Mout
+                               optns = list(corrOut = TRUE, metric = "power", 
+                                            alpha = .5 ))$Mout
   
   return(list(Min = Min, Tin = Tin, obj_fit = obj_fit))
 }
@@ -99,17 +101,25 @@ Z = as.matrix(Z)
 
 zout = as.matrix(cbind(rep(mean(Z[,1]), 3), quantile(Z[,2], prob = c(.1,.5,.9))))
 
-second_step_gfr_fit0 = frechet::GloCovReg(x = Z, M = second_step_resp0, xout = zout,
-                                          optns = list(corrOut = TRUE,  metric = "power", alpha = .5))$Mout
-second_step_gfr_fit1 = frechet::GloCovReg(x = Z, M = second_step_resp1,  xout =zout,
-                                          optns = list(corrOut = TRUE,  metric = "power", alpha = .5))$Mout
+second_step_gfr_fit0 = frechet::GloCovReg(x = Z, M = second_step_resp0, 
+                                          xout = zout, 
+                                          optns = list(corrOut = TRUE,  
+                                                       metric = "power",
+                                                       alpha = .5))$Mout
+second_step_gfr_fit1 = frechet::GloCovReg(x = Z, M = second_step_resp1,  
+                                          xout =zout,
+                                          optns = list(corrOut = TRUE, 
+                                                       metric = "power", 
+                                                       alpha = .5))$Mout
 #### Generating Figure 4
 for(i in 1:3){ ## setting diagonals of the estimated corr. matrices to 1
   diag(second_step_gfr_fit0[[i]])= 0
   diag(second_step_gfr_fit1[[i]]) = 0
 }
-adjPred = list(second_step_gfr_fit0[[1]], second_step_gfr_fit0[[2]], second_step_gfr_fit0[[3]],
-               second_step_gfr_fit1[[1]], second_step_gfr_fit1[[2]], second_step_gfr_fit1[[3]])
+adjPred = list(second_step_gfr_fit0[[1]], second_step_gfr_fit0[[2]], 
+               second_step_gfr_fit0[[3]],
+               second_step_gfr_fit1[[1]], second_step_gfr_fit1[[2]], 
+               second_step_gfr_fit1[[3]])
 
 for(k in 1:6){
   pdf(sprintf("../output/corrplot%d_over_total_score_CN_Tshifted_final.pdf", k))
@@ -138,9 +148,6 @@ adjPred = c(second_step_gfr_fit0,second_step_gfr_fit1)
 cl <- list()
 for(k in 1:6){
   g <- graph_from_adjacency_matrix(abs(adjPred[[k]]), mode = 'undirected', weighted = TRUE)
-  #g = delete.vertices(simplify(g), degree(g)==0)
-  #g = simplify(g)
-  # cl <- cluster_fast_greedy(g)
   cl[[k]] <- g %>% cluster_leading_eigen()
   mem <- sapply(1:length(unique(cl[[k]]$membership)), function(i) which(cl[[k]]$membership==i))
   mem <- mem[order(sapply(mem, function(x) x[1], simplify=TRUE))]
@@ -218,10 +225,16 @@ dev.off()
 #######################
 #######################
 ###Modularity
-second_step_gfr_fit0 = frechet::GloCovReg(x = Z, M = second_step_resp0, xout = zout,
-                                          optns = list(corrOut = TRUE,  metric = "power", alpha = .5))$Mout
-second_step_gfr_fit1 = frechet::GloCovReg(x = Z, M = second_step_resp1,  xout =zout,
-                                          optns = list(corrOut = TRUE,  metric = "power", alpha = .5))$Mout
+second_step_gfr_fit0 = frechet::GloCovReg(x = Z, M = second_step_resp0,
+                                          xout = zout,
+                                          optns = list(corrOut = TRUE,
+                                                       metric = "power",
+                                                       alpha = .5))$Mout
+second_step_gfr_fit1 = frechet::GloCovReg(x = Z, M = second_step_resp1,
+                                          xout =zout,
+                                          optns = list(corrOut = TRUE,
+                                                       metric = "power", 
+                                                       alpha = .5))$Mout
 
 q_geo = function(t,A,B,pow){
   A_svd = eigen(A); B_svd = eigen(B)
@@ -246,7 +259,9 @@ modularity_over_geod = lapply(1:3, function(ind){
   })
   return(res)
 }) 
-df_modularity_CN = data.frame(value = c(modularity_over_geod[[1]], modularity_over_geod[[2]], modularity_over_geod[[3]]))
+df_modularity_CN = data.frame(value = c(modularity_over_geod[[1]], 
+                                        modularity_over_geod[[2]], 
+                                        modularity_over_geod[[3]]))
 df_modularity_CN$Time = rep(seq(0,1,length.out = 100),3)
 df_modularity_CN$z = c(rep("Z1", 100), rep("Z2", 100), rep("Z3",100))
 ###
@@ -279,8 +294,10 @@ adjPred = c(second_step_gfr_fit0,second_step_gfr_fit1)
 
 
 for(k in c(1,2,3,6,5,4)){
-  g <- graph_from_adjacency_matrix(abs(adjPred[[k]]), mode = 'undirected', weighted = TRUE)
-  print(paste0("Modularity = ", round(igraph::modularity(g, cl[[k]]$membership),3)))
+  g <- graph_from_adjacency_matrix(abs(adjPred[[k]]), 
+                                   mode = 'undirected', weighted = TRUE)
+  print(paste0("Modularity = ", 
+               round(igraph::modularity(g, cl[[k]]$membership),3)))
 }
 #####################################################
 #####################################################
@@ -309,10 +326,16 @@ Z = do.call(rbind,lapply(1:n, function(ind){
 Z = as.matrix(Z)
 zout = as.matrix(cbind(rep(median(Z[,1]), 3), quantile(Z[,2], prob = c(.1,.5,.9))))
 #####
-second_step_gfr_fit0 = frechet::GloCovReg(x = Z, M = second_step_resp0, xout = zout,
-                                          optns = list(corrOut = TRUE,  metric = "power", alpha = .5))$Mout
-second_step_gfr_fit1 = frechet::GloCovReg(x = Z, M = second_step_resp1,  xout =zout,
-                                          optns = list(corrOut = TRUE,  metric = "power", alpha = .5))$Mout
+second_step_gfr_fit0 = frechet::GloCovReg(x = Z, M = second_step_resp0,
+                                          xout = zout,
+                                          optns = list(corrOut = TRUE,
+                                                       metric = "power",
+                                                       alpha = .5))$Mout
+second_step_gfr_fit1 = frechet::GloCovReg(x = Z, M = second_step_resp1,
+                                          xout =zout,
+                                          optns = list(corrOut = TRUE,  
+                                                       metric = "power", 
+                                                       alpha = .5))$Mout
 ####
 for(i in 1:3){
   diag(second_step_gfr_fit0[[i]])= 0
@@ -337,7 +360,8 @@ adjPred = c(second_step_gfr_fit0,second_step_gfr_fit1)
 
 cl <- list()
 for(k in 1:6){
-  g <- graph_from_adjacency_matrix(abs(adjPred[[k]]), mode = 'undirected', weighted = TRUE)
+  g <- graph_from_adjacency_matrix(abs(adjPred[[k]]), 
+                                   mode = 'undirected', weighted = TRUE)
   cl[[k]] <- g %>% cluster_leading_eigen()
   mem <- sapply(1:length(unique(cl[[k]]$membership)), function(i) which(cl[[k]]$membership==i))
   mem <- mem[order(sapply(mem, function(x) x[1], simplify=TRUE))]
@@ -347,18 +371,24 @@ lapply(cl, function(cli) table(cli$membership))
 noClusters <- sapply(cl, function(cli) length(table(cli$membership)))
 noClusters  #c(11,4,11,7,3,7)
 ###Modularities
-second_step_gfr_fit0 = frechet::GloCovReg(x = Z, M = second_step_resp0, xout = zout,
-                                          optns = list(corrOut = TRUE,  metric = "power", alpha = .5))$Mout
-second_step_gfr_fit1 = frechet::GloCovReg(x = Z, M = second_step_resp1,  xout =zout,
-                                          optns = list(corrOut = TRUE,  metric = "power", alpha = .5))$Mout
+second_step_gfr_fit0 = frechet::GloCovReg(x = Z, M = second_step_resp0,
+                                          xout = zout,
+                                          optns = list(corrOut = TRUE, 
+                                                       metric = "power",
+                                                       alpha = .5))$Mout
+second_step_gfr_fit1 = frechet::GloCovReg(x = Z, M = second_step_resp1,
+                                          xout =zout,
+                                          optns = list(corrOut = TRUE,
+                                                       metric = "power",
+                                                       alpha = .5))$Mout
 
 modularity_over_geod = lapply(1:3, function(ind){ 
   set.seed(3346)
   res = sapply(seq(0,1,length.out = 100), function(t){
     out = q_geo(t, second_step_gfr_fit0[[ind]], second_step_gfr_fit1[[ind]],.5)
     diag(out)= 0; out[out<.4] = 0
-    g <- graph_from_adjacency_matrix(abs(out), mode = 'undirected', weighted = TRUE)
-    #g = simplify(g)
+    g <- graph_from_adjacency_matrix(abs(out), 
+                                     mode = 'undirected', weighted = TRUE)
     cl <- g %>% cluster_leading_eigen()
     mem <- sapply(1:length(unique(cl$membership)), function(i) which(cl$membership==i))
     mem <- mem[order(sapply(mem, function(x) x[1], simplify=TRUE))]
@@ -367,7 +397,9 @@ modularity_over_geod = lapply(1:3, function(ind){
   })
   return(res)
 })  
-df_modularity_MCI = data.frame(value = c(modularity_over_geod[[1]], modularity_over_geod[[2]], modularity_over_geod[[3]]))
+df_modularity_MCI = data.frame(value = c(modularity_over_geod[[1]],
+                                         modularity_over_geod[[2]],
+                                         modularity_over_geod[[3]]))
 df_modularity_MCI$Time = rep(seq(0,1,length.out = 100),3)
 df_modularity_MCI$z = c(rep("Z1", 100), rep("Z2", 100), rep("Z3",100))
 ###
@@ -377,7 +409,8 @@ glob_eff_over_geod = lapply(1:3, function(ind){
   res = sapply(seq(0,1,length.out = 100), function(t){
     out = q_geo(t, second_step_gfr_fit1[[ind]], second_step_gfr_fit0[[ind]],.5)
     diag(out)= 0; out[out<.4] = 0
-    g <- graph_from_adjacency_matrix(abs(out), mode = 'undirected', weighted = TRUE)
+    g <- graph_from_adjacency_matrix(abs(out),
+                                     mode = 'undirected', weighted = TRUE)
     return(round(brainGraph::efficiency(g, type = "global"),3))
   })
   return(res)
@@ -391,7 +424,8 @@ df_glob_eff_MCI$z = c(rep("Z1", 100), rep("Z2", 100), rep("Z3",100))
 
 ###Modularities ### Table 1
 for(k in c(1,2,3,4,5,6)){
-  g <- graph_from_adjacency_matrix(abs(adjPred[[k]]), mode = 'undirected', weighted = TRUE)
+  g <- graph_from_adjacency_matrix(abs(adjPred[[k]]), 
+                                   mode = 'undirected', weighted = TRUE)
   print(paste0("Modularity = ", round(igraph::modularity(g, cl[[k]]$membership),3)))
 }
 #####
@@ -424,7 +458,8 @@ p
 ggsave("../output/diff_corrplot_over_total_score_CN_MCI_final.pdf", width = 8, height = 7)
 ###### modularity plot --  Generating Figure S.14
 df_modularity = rbind(df_modularity_CN, df_modularity_MCI)
-df_modularity$group = c(rep("CN", nrow(df_modularity_CN)), rep("MCI", nrow(df_modularity_MCI)))
+df_modularity$group = c(rep("CN", nrow(df_modularity_CN)), 
+                        rep("MCI", nrow(df_modularity_MCI)))
 p1 = ggplot(df_modularity)+
   geom_line(aes(x = Time, y = value , group = z, color = z), size = 1) +
   labs(#title = "Euclidean response",
@@ -447,7 +482,8 @@ ggsave("../output/modularity_over_total_score_CN_MCI_final.pdf",
 ##########
 ###### global efficiency plot --  Generating Figure S.15
 df_glob_eff = rbind(df_glob_eff_CN, df_glob_eff_MCI)
-df_glob_eff$group = c(rep("CN", nrow(df_glob_eff_CN)), rep("MCI", nrow(df_glob_eff_MCI)))
+df_glob_eff$group = c(rep("CN", nrow(df_glob_eff_CN)), 
+                      rep("MCI", nrow(df_glob_eff_MCI)))
 p2 = ggplot(df_glob_eff)+
   geom_line(aes(x = Time, y = value , group = z, color = z), size = 1) +
   labs(#title = "Euclidean response",

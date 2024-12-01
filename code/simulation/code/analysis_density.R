@@ -1,30 +1,38 @@
-rm(list = ls())
+#rm(list = ls())
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 library(frechet)
 library(MASS)
 library(truncnorm)
-##global parameters
+##Data Generation:: global parameters
 mu0 = 0
 sigma0 = .3
 beta = .3
 gamma = .5
 rho1 = .25
 rho2 = 1
-## Geodesic in the space of univariate distributions
-q_geo = function(t,A,B){
+##Data Generation::  Geodesic in the space of univariate distributions
+q_geo = function(t,A,B){ ## Input: end points A,B and time parameter t; 
+                         ## Output: A point on the geodesic connecting A,B in the space of distributions
   (1-t)*A + t*B
 }
-## perturbation map to generate noisy observations around a true geodesic trajectory; alpha is the bound on the variance of the perturbed observation from the truth as per assumption (A3)
-q_pert = function(qtrue,alpha){
+##Data Generation::  perturbation map to generate noisy observations around a true geodesic trajectory; alpha is the bound on the variance of the perturbed observation from the truth as per assumption (A3)
+q_pert = function(qtrue,alpha){ ##Input: true distribution (as quantile) qtrue, perturbation parameter alpha; 
+                                ## Output: noisy distributional observation (as quantile)
   eps = sample(c(alpha, -alpha),size = 1, prob = c(.5,.5))
   return(qtrue + eps*alpha*qtrue*(1-qtrue))
 }
-##transformation to generate non-normal densities with the same frechet mean (used in Setting IV)
+
+##Data Generation::  transformation to generate non-normal densities with the same frechet mean (used in Setting IV)
 transport = function(k,x) x - (sin(k * x)/abs(k))
 
-## subject level geodesic : generate observed data in the Wasserstein space of univariate distributions under 4 settings and recover the end points of the true geodesics by global Fr regression
+##Data Generation::  subject level geodesic : generate observed data in the Wasserstein space of univariate distributions under 4 settings and recover the end points of the true geodesics by global Fr regression
 subject_level_GFR = function(ind, Z, alpha, ni, setting){
-  if(setting == 1){
+  ## Input: ind = subject index, Z = baseline predictor, alpha = perturbation level, ni = number of observations for ith subject, setting = simulation scenario number
+  ## Output: a list containing Ti = random time points of observations for ith subject, q_on_geod = true geodesic path (quantile function representation), 
+  #### qin = observed points around the geodesic in the distribution space (quantile function representation), perturbed with an error map 
+  #### obj_fit = in the distribution space (quantile function representation) observations at the end points of the time domain 
+  
+  if(setting == 1){ ## Four different data generation mechanisms are considered as per section 4 
     muY = function(u,x) rnorm(1, mu0 + beta*x+ .2*u, rho1)
     sigmaY = function(u,x) 1
   } else if (setting == 2){
@@ -67,9 +75,9 @@ subject_level_GFR = function(ind, Z, alpha, ni, setting){
               qin = qin, obj_fit = obj_fit$qout))
 }
 
-### Do not run : compute MISE over 200 replications through parallel computation
+### This part computes the Mean Integrted Square Error (MISE) table in Section 4
+### Do not run : compute MISE over 150 replications through parallel computation -- Go to line 146 
 ### outputs are saved in the data folder : used for boxplot
-### Go to line 138 
 library(parallel)
 ncore = 15
 B = 150
@@ -134,7 +142,7 @@ for(n in c(50,400,1000)){
   save(res, file = sprintf("../data/Setting1_MISE_dense_n%d.Rda",n))
 }
 #################################
-#################################
+################################# Generating figures and output from the results across different settings
 ## Reading the saved .Rda files to generate Figure 3
 B = 150
 ################dense design
@@ -142,60 +150,60 @@ B = 150
 load("../data/MISE_density_boxplot_comp_dense_n50_setting1.Rda")
 res_n50_dense_set1 = sapply(1:B, function(i) res[[i]]$measureWfits)
 load("../data/MISE_density_boxplot_comp_dense_n400_setting1.Rda")
-res_n100_dense_set1 = sapply(1:B, function(i) res[[i]]$measureWfits)
+res_n400_dense_set1 = sapply(1:B, function(i) res[[i]]$measureWfits)
 load("../data/MISE_density_boxplot_comp_dense_n1000_setting1.Rda")
-res_n50_dense_set1 = sapply(1:B, function(i) res[[i]]$measureWfits)
+res_n1000_dense_set1 = sapply(1:B, function(i) res[[i]]$measureWfits)
 
 ###dense setting 2
 load("../data/MISE_density_boxplot_comp_dense_n50_setting2.Rda")
 res_n50_dense_set2 = sapply(1:B, function(i) res[[i]]$measureWfits)
 load("../data/MISE_density_boxplot_comp_dense_n400_setting2.Rda")
-res_n100_dense_set2 = sapply(1:B, function(i) res[[i]]$measureWfits)
+res_n400_dense_set2 = sapply(1:B, function(i) res[[i]]$measureWfits)
 load("../data/MISE_density_boxplot_comp_dense_n1000_setting2.Rda")
-res_n50_dense_set2 = sapply(1:B, function(i) res[[i]]$measureWfits)
+res_n1000_dense_set2 = sapply(1:B, function(i) res[[i]]$measureWfits)
 
 ###dense setting 3
 load("../data/MISE_density_boxplot_comp_dense_n50_setting3.Rda")
 res_n50_dense_set3 = sapply(1:B, function(i) res[[i]]$measureWfits )
 load("../data/MISE_density_boxplot_comp_dense_n400_setting3.Rda")
-res_n100_dense_set3 = sapply(1:B, function(i) res[[i]]$measureWfits)
+res_n400_dense_set3 = sapply(1:B, function(i) res[[i]]$measureWfits)
 load("../data/MISE_density_boxplot_comp_dense_n1000_setting3.Rda")
-res_n50_dense_set3 = sapply(1:B, function(i) res[[i]]$measureWfits)
+res_n1000_dense_set3 = sapply(1:B, function(i) res[[i]]$measureWfits)
 
 ###dense setting 4
 load("../data/MISE_density_boxplot_comp_dense_n50_setting4.Rda")
 res_n50_dense_set4 = sapply(1:B, function(i) res[[i]]$measureWfits )
 load("../data/MISE_density_boxplot_comp_dense_n400_setting4.Rda")
-res_n100_dense_set4 = sapply(1:B, function(i) res[[i]]$measureWfits)
+res_n400_dense_set4 = sapply(1:B, function(i) res[[i]]$measureWfits)
 load("../data/MISE_density_boxplot_comp_dense_n1000_setting4.Rda")
-res_n50_dense_set4 = sapply(1:B, function(i) res[[i]]$measureWfits)
+res_n1000_dense_set4 = sapply(1:B, function(i) res[[i]]$measureWfits)
 
 
 ### put together in a dataframe
 df_dense_setting1 = data.frame(MISE = c(res_n50_dense_set1,
-                                        res_n100_dense_set1,
-                                        res_n50_dense_set1))
+                                        res_n400_dense_set1,
+                                        res_n1000_dense_set1))
 df_dense_setting1$sample_size = c(rep("n = 50, ni = 30", B),
                                   rep("n = 400, ni = 30", B),
                                   rep("n = 1000, ni = 30", B))
 
 df_dense_setting2 = data.frame(MISE = c(res_n50_dense_set2,
-                                        res_n100_dense_set2,
-                                        res_n50_dense_set2))
+                                        res_n400_dense_set2,
+                                        res_n1000_dense_set2))
 df_dense_setting2$sample_size = c(rep("n = 50, ni = 30", B),
                                   rep("n = 400, ni = 30", B),
                                   rep("n = 1000, ni = 30", B))
 
 
 df_dense_setting3 = data.frame(MISE = c(res_n50_dense_set3,
-                                        res_n100_dense_set3,
-                                        res_n50_dense_set3))
+                                        res_n400_dense_set3,
+                                        res_n1000_dense_set3))
 df_dense_setting3$sample_size = c(rep("n = 50, ni = 30", B),
                                   rep("n = 400, ni = 30", B),
                                   rep("n = 1000, ni = 30", B))
 df_dense_setting4 = data.frame(MISE = c(res_n50_dense_set4,
-                                        res_n100_dense_set4,
-                                        res_n50_dense_set4))
+                                        res_n400_dense_set4,
+                                        res_n1000_dense_set4))
 df_dense_setting4$sample_size = c(rep("n = 50, ni = 30", B),
                                   rep("n = 400, ni = 30", B),
                                   rep("n = 1000, ni = 30", B))
@@ -205,61 +213,61 @@ df_dense_setting4$sample_size = c(rep("n = 50, ni = 30", B),
 load("../data/MISE_density_boxplot_comp_sparse_n50_setting1.Rda")
 res_n50_sparse_set1 = sapply(1:B, function(i) res[[i]]$measureWfits)
 load("../data/MISE_density_boxplot_comp_sparse_n400_setting1.Rda")
-res_n100_sparse_set1 = sapply(1:B, function(i) res[[i]]$measureWfits)
+res_n400_sparse_set1 = sapply(1:B, function(i) res[[i]]$measureWfits)
 load("../data/MISE_density_boxplot_comp_sparse_n1000_setting1.Rda")
-res_n50_sparse_set1 = sapply(1:B, function(i) res[[i]]$measureWfits)
+res_n1000_sparse_set1 = sapply(1:B, function(i) res[[i]]$measureWfits)
 
 ###sparse setting 2
 load("../data/MISE_density_boxplot_comp_sparse_n50_setting2.Rda")
 res_n50_sparse_set2 = sapply(1:B, function(i) res[[i]]$measureWfits)
 load("../data/MISE_density_boxplot_comp_sparse_n400_setting2.Rda")
-res_n100_sparse_set2 = sapply(1:B, function(i) res[[i]]$measureWfits)
+res_n400_sparse_set2 = sapply(1:B, function(i) res[[i]]$measureWfits)
 load("../data/MISE_density_boxplot_comp_sparse_n1000_setting2.Rda")
-res_n50_sparse_set2 = sapply(1:B, function(i) res[[i]]$measureWfits)
+res_n1000_sparse_set2 = sapply(1:B, function(i) res[[i]]$measureWfits)
 
 ###sparse setting 3
 load("../data/MISE_density_boxplot_comp_sparse_n50_setting3.Rda")
 res_n50_sparse_set3 = sapply(1:B, function(i) res[[i]]$measureWfits)
 load("../data/MISE_density_boxplot_comp_sparse_n400_setting3.Rda")
-res_n100_sparse_set3 = sapply(1:B, function(i) res[[i]]$measureWfits)
+res_n400_sparse_set3 = sapply(1:B, function(i) res[[i]]$measureWfits)
 load("../data/MISE_density_boxplot_comp_sparse_n1000_setting3.Rda")
-res_n50_sparse_set3 = sapply(1:B, function(i) res[[i]]$measureWfits)
+res_n1000_sparse_set3 = sapply(1:B, function(i) res[[i]]$measureWfits)
 
 ###sparse setting 4
 load("../data/MISE_density_boxplot_comp_sparse_n50_setting4.Rda")
 res_n50_sparse_set4 = sapply(1:B, function(i) res[[i]]$measureWfits )
 load("../data/MISE_density_boxplot_comp_sparse_n400_setting4.Rda")
-res_n100_sparse_set4 = sapply(1:B, function(i) res[[i]]$measureWfits)
+res_n400_sparse_set4 = sapply(1:B, function(i) res[[i]]$measureWfits)
 load("../data/MISE_density_boxplot_comp_sparse_n1000_setting4.Rda")
-res_n50_sparse_set4 = sapply(1:B, function(i) res[[i]]$measureWfits)
+res_n1000_sparse_set4 = sapply(1:B, function(i) res[[i]]$measureWfits)
 
 
 ###
 ### put together in a dataframe
 df_sparse_setting1 = data.frame(MISE = c(res_n50_sparse_set1,
-                                         res_n100_sparse_set1,
-                                         res_n50_sparse_set1))
+                                         res_n400_sparse_set1,
+                                         res_n1000_sparse_set1))
 df_sparse_setting1$sample_size = c(rep("n = 50, ni = 30", B),
                                    rep("n = 400, ni = 30", B),
                                    rep("n = 1000, ni = 30", B))
 
 df_sparse_setting2 = data.frame(MISE = c(res_n50_sparse_set2,
-                                         res_n100_sparse_set2,
-                                         res_n50_sparse_set2))
+                                         res_n400_sparse_set2,
+                                         res_n1000_sparse_set2))
 df_sparse_setting2$sample_size = c(rep("n = 50, ni = 30", B),
                                    rep("n = 400, ni = 30", B),
                                    rep("n = 1000, ni = 30", B))
 
 
 df_sparse_setting3 = data.frame(MISE = c(res_n50_sparse_set3,
-                                         res_n100_sparse_set3,
-                                         res_n50_sparse_set3))
+                                         res_n400_sparse_set3,
+                                         res_n1000_sparse_set3))
 df_sparse_setting3$sample_size = c(rep("n = 50, ni = 30", B),
                                    rep("n = 400, ni = 30", B),
                                    rep("n = 1000, ni = 30", B))
 df_sparse_setting4 = data.frame(MISE = c(res_n50_sparse_set4,
-                                         res_n100_sparse_set4,
-                                         res_n50_sparse_set4))
+                                         res_n400_sparse_set4,
+                                         res_n1000_sparse_set4))
 df_sparse_setting4$sample_size = c(rep("n = 50, ni = 30", B),
                                    rep("n = 400, ni = 30", B),
                                    rep("n = 1000, ni = 30", B))
@@ -283,9 +291,10 @@ df_overall$setting =  rep(c(rep("Setting I", B*3),
                             rep("Setting III", B*3),
                             rep("Setting IV", B*3)),2)
 neworder <- c("n = 50","n = 400", "n = 1000")
-library(dplyr)
+library(dplyr); library(ggplot2)
 df_overall2 <- arrange(transform(df_overall,
-                                 sample_size2 = factor(sample_size2,levels=neworder)),sample_size2)
+                                 sample_size2 = factor(sample_size2,levels=neworder)),
+                       sample_size2)
 
 
 p = ggplot(df_overall2, aes(sample_size2, MISE)) + 
@@ -307,13 +316,16 @@ ggsave("../output/mise_boxplot_over_n_ni_setting_final.pdf",
 ######################################
 ######## Visualization for an individual -- Generating Figures 1 & 2
 ######################################
-### Fits across different values of alpha -- compute true, observed, 
-### fitted trajectories at 3 different time points along the geodesics.
-### outputs are saved in the data folder -- running  will take about 5 mins for each alpha value.: used for boxplot
-### Go to line 382
+### Fits across different values of alpha -- compute true, observed, fitted trajectories at 3 different time points along the geodesics.
 n=50
-setting = 3
-df_comp =  function(alpha){
+setting = 4
+### This function computes the subject-specific (for subject ind = 1) true, noisy (observed), and fitted distrbutional data for a given level of the perturbation parameter alpha at 3 different time points
+### Input:  alpha (a scalar denoting the perturbation level)
+### Output: A list of 3 corresponding to 3 different time points along the geodesics,
+### Each list contains a list length 3 of density-valued objects, which correspond to the true, observed, fitted trajectories.
+### outputs are saved in the data folder -- running  will take about 5 mins for each alpha value.: used for boxplot
+### Go to line 397
+df_comp =  function(alpha){ 
   Z = sapply(1:n, function(ind)  runif(1, 0, 1)) ## baseline covariate
   ni = sapply(1:n, function(ind) 10+2) ## number of observations per subject
   second_step_resp = lapply(1:n, function(ind){ 
@@ -377,15 +389,17 @@ df_comp =  function(alpha){
              dout_overall_ind = dout_overall_ind, Ti = Ti)
   save(res, file = sprintf("../data/subj_sp_over_alpha_A%d_Setting3.Rda", l))
 }
+### The function df_comp is called for three levels of alpha, for each alpha, we have distributional outputs
+### for subject 1
 alpha = c(0.01,0.1,0.2); rslt = list()
 for(l in 1:3){ rslt[[l]] = df_comp(alpha[l])}
 
 ##### Generating Figure 1
-load("../data/subj_sp_over_alpha_A1_Setting3.Rda") 
+load("../data/subj_sp_over_alpha_A1_Setting4.Rda") 
 res_a0 = res
-load("../data/subj_sp_over_alpha_A2_Setting3.Rda")
+load("../data/subj_sp_over_alpha_A2_Setting4.Rda")
 res_a1 = res
-load("../data/subj_sp_over_alpha_A3_Setting3.Rda")
+load("../data/subj_sp_over_alpha_A3_Setting4.Rda")
 res_a2 = res
 
 ### gathering all data for visualization
@@ -457,11 +471,14 @@ ggsave("../output/density_true_obs_estd_over_alpha_final.pdf",
        width = 8, height = 7)
 ######################################
 ######################################
-### Fits over different levels of the baseline covariate Z -- 
-### compute observed and fitted trajectories for 4 settings at 3 different time points along the geodesics for a fixed level of error alpha
+### Fits over different levels of the baseline covariate Z -- Figure 2
+alpha = 0.1 ## perturbation level is fixed at 0.1
+### This function computes the observed and fitted trajectories for 4 settings at 3 different time points along the geodesics for a fixed level of error alpha
+### Input: setting: can take values 1,2,3,4, depending on the data generation mechanism
+### Output: For each setting, a list of length 4, each contains the subject specific (for subject ind = 1) data: 
+### all the time points at which the observation is made for a specific subject (T_ind_zz) and the true (dtrue_zz), observed (dtrue_zz2), and estimated (dout_zz) density valued data.
 ### outputs are saved in the data folder -- running  will take about 10 mins for each setting value.: used for boxplot
-### Do not run: go to line 540
-alpha = 0.1
+### Do not run: go to line 597
 for_each_setting = function(setting){
   Z = sapply(1:n, function(ind)  runif(1, 0, 1)) ## Generate baseline covariate
   ni = sapply(1:n, function(ind) 10+2) ## number of observations for each subject
@@ -522,14 +539,10 @@ for_each_setting = function(setting){
   }
  save(res, file = sprintf("../data/subj_specific_dens_zz_setting%d.Rda", setting))
 }
-#### Do not run -- will take more than half an hour to run for all settings 
-#### Go to line 540
-dens_display_setting1 = for_each_setting(1)
-dens_display_setting2 = for_each_setting(2)
-dens_display_setting3 = for_each_setting(3)
-dens_display_setting4 = for_each_setting(4)
-
-
+### Collects the true and fitted density objects for each setting for 3 chosen time points (1, 5, 12) to form a dataframe
+### Used to collect the output from the function 'for_each_setting(setting)' above.
+### Input: A list object containing the output of the functions for_each_setting(setting)
+### Output: A data frame containg the true and estimated density valued data at 3 different output z-levels at 3 different time points
 df_dens_out = function(res){
   Ti_ind0 = res[[1]]$T_ind_zz; Ti_ind1 = res[[2]]$T_ind_zz; Ti_ind2 = res[[3]]$T_ind_zz
   dtrue_zz = list(); dtrue_zz[[1]] = res[[1]]$dtrue_zz2; dtrue_zz[[2]] = res[[2]]$dtrue_zz2; dtrue_zz[[3]] = res[[3]]$dtrue_zz2
@@ -551,7 +564,7 @@ df_dens_out = function(res){
   dout_z1_overall_ind_display = do.call(rbind, lapply(c(1,5,12), function(j){
     data.frame(domain = dout_zz[[1]][[j]]$x,
                dens = dout_zz[[1]][[j]]$y) 
-    }))
+  }))
   dout_z2_overall_ind_display = do.call(rbind, lapply(c(1,5,12), function(j){
     data.frame(domain = dout_zz[[2]][[j]]$x,
                dens = dout_zz[[2]][[j]]$y)
@@ -574,7 +587,14 @@ df_dens_out = function(res){
   dens_display_out$time = rep(c(rep("t = 0", 100), rep("t = 0.50", 100), rep("t = 1", 100)),6)
   return(dens_display_out)
 }
-##################
+#### Do not run lines 592--595 -- it will take more than half an hour to run for all settings 
+#### Go to line 597
+dens_display_setting1 = for_each_setting(1)
+dens_display_setting2 = for_each_setting(2)
+dens_display_setting3 = for_each_setting(3)
+dens_display_setting4 = for_each_setting(4)
+
+################## Generating Figure 2
 load("../data/subj_specific_dens_zz_setting1.Rda")
 dens_display_setting1 = df_dens_out(res)
 load('../data/subj_specific_dens_zz_setting2.Rda')
@@ -584,7 +604,8 @@ dens_display_setting3 = df_dens_out(res)
 load('../data/subj_specific_dens_zz_setting4.Rda')
 dens_display_setting4 = df_dens_out(res)
 
-dens_display_final = rbind(dens_display_setting1, dens_display_setting2, dens_display_setting3, dens_display_setting4)
+dens_display_final = rbind(dens_display_setting1, dens_display_setting2,
+                           dens_display_setting3, dens_display_setting4)
 dens_display_final$setting = c(rep("Setting I",nrow(dens_display_setting1)),
                                rep("Setting II",nrow(dens_display_setting2)),
                                rep("Setting III",nrow(dens_display_setting3)),
