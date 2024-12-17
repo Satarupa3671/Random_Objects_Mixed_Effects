@@ -308,6 +308,7 @@ p = ggplot(df_overall2, aes(sample_size2, MISE)) +
   facet_wrap(setting~., scales = "free_y") 
 
 p
+dir.create("../output", showWarnings = FALSE)
 ggsave("../output/mise_boxplot_over_n_ni_setting_final.pdf",
        width = 8, height = 7)
 

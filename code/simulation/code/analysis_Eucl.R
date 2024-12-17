@@ -99,5 +99,6 @@ p1 = ggplot() +
         legend.text = element_text(size = 12),
         legend.position = "bottom") 
 p1
+dir.create("../output", showWarnings = FALSE)
 ggsave("../output/compare_Eucl_estd.pdf", width = 8, height = 7)
 

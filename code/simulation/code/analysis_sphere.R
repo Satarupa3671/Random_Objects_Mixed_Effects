@@ -203,4 +203,5 @@ p = ggplot(transform(df_combined,
         legend.title = element_blank(),
         legend.position="bottom", strip.text.y = element_blank()) 
 p
+dir.create("../output", showWarnings = FALSE)
 ggsave("../output/sphe_MISE_boxplot.pdf", width = 8, height = 7)

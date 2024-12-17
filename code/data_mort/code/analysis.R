@@ -32,7 +32,7 @@ obs = lapply(years, function(year){
     data_density(country,year) 
   })
 })
-save(obs, file = "../data/obs_dens_quant_2.Rda")
+save(obs, file = "../data/obs_dens_quant.Rda")
 
 ############
 ##function to fit the subject level (first step) Global Fr Regression to compute the random effects at the end points of the time domain
@@ -154,6 +154,7 @@ p1 = ggplot(data = df_pred1) +
         legend.position="bottom", legend.text = element_text(angle = 90)) +
   facet_wrap(~year)
 p1
+dir.create("../output", showWarnings = FALSE)
 ggsave("../output/change_pred_unemployment_year01_final2.pdf",
        width = 8, height = 7)
 
@@ -582,7 +583,7 @@ contr_select_ind = which(countries %in% contr_select)
 years_select = c(1995, 2000, 2008)
 years_select_ind = which(years %in% years_select)
 ####### loading the observed data -- quantiles and densities
-load("../data/obs_dens_quant_2.Rda")
+load("../data/obs_dens_quant.Rda")
 df_obs = do.call(rbind,lapply(contr_select_ind, function(ind){
   do.call(rbind,lapply(years_select_ind, function(j){
     data.frame(domain = obs[[j]][[ind]]$dens$x,

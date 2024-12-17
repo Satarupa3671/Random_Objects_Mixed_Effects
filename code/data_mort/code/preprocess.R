@@ -133,7 +133,7 @@ second_step_resp = lapply(1:n, function(ind){
   mi_hat1 = obj_fit_ind[2,]
   return(list(qin = qin, mi_hat0 = mi_hat0, mi_hat1 = mi_hat1, dSup_mean = dSup_mean))
 })
-save(second_step_resp, file = "second_step_resp2.Rda")
+save(second_step_resp, file = "../data/second_step_resp.Rda")
 second_step_resp0 = t(sapply(1:n, function(ind){
   second_step_resp[[ind]]$mi_hat0
 }))

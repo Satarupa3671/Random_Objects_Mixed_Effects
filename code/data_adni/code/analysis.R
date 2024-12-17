@@ -120,7 +120,7 @@ adjPred = list(second_step_gfr_fit0[[1]], second_step_gfr_fit0[[2]],
                second_step_gfr_fit0[[3]],
                second_step_gfr_fit1[[1]], second_step_gfr_fit1[[2]], 
                second_step_gfr_fit1[[3]])
-
+dir.create("../output", showWarnings = FALSE)
 for(k in 1:6){
   pdf(sprintf("../output/corrplot%d_over_total_score_CN_Tshifted_final.pdf", k))
   corrplot::corrplot(adjPred[[k]],tl.pos = "n")
